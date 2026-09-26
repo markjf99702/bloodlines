@@ -870,7 +870,8 @@ function writeHash() {
   else if (state.sel) h = encodeURIComponent(state.sel.name);
   else if (state.group) h = `show=${state.group}`;
   const url = h ? `#${h}` : location.pathname + location.search;
-  if (location.hash.slice(1) !== h) history.replaceState(null, '', url);
+  // Some embedded views don't allow changing the address; the app works the same without it.
+  try { if (location.hash.slice(1) !== h) history.replaceState(null, '', url); } catch {}
 }
 
 function readHash({ fly }) {

@@ -40,6 +40,7 @@ npm test                      # checks the family tree, then uses the app in Chr
 npm install                   # once, for the screenshot tool's PNG compressor
 node tools/screenshots.mjs    # redraws docs/*.png and og.png
 node tools/make-icons.mjs     # redraws the PNG icons from icon.svg
+node tools/single-file.mjs    # bundles everything into dist/bloodlines.html, one file you can send around
 ```
 
 To put it online with GitHub Pages: **Settings → Pages → Build and deployment → Deploy from a branch**, then pick `main` and `/ (root)`.
