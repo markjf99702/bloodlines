@@ -11,7 +11,7 @@ export const FOUNDERS = ['Byerley Turk', 'Darley Arabian', 'Godolphin Arabian'];
 
 const DATA = `
 Byerley Turk | 1680 | | founder c k | Captain Robert Byerley's war horse in the 1680s and '90s, later a stallion in the north of England. The oldest of the three founders.
-Darley Arabian | 1700 | | founder k | Bought near Aleppo in Syria by Thomas Darley and shipped home to Yorkshire in 1704. He never raced. About 95% of thoroughbreds alive today descend from him in the male line.
+Darley Arabian | 1700 | | founder c k | Bought near Aleppo in Syria by Thomas Darley and shipped home to Yorkshire in 1704. He never raced. About 95% of thoroughbreds alive today descend from him in the male line.
 Godolphin Arabian | 1724 | | founder c k | Foaled around 1724, probably in Yemen. He reached England by way of France and ended up at the Earl of Godolphin's stud.
 
 Jigg | 1701 | Byerley Turk | c |
@@ -30,7 +30,7 @@ Buzzard | 1787 | Woodpecker | |
 Castrel | 1801 | Buzzard | |
 Pantaloon | 1824 | Castrel | |
 Windhound | 1847 | Pantaloon | |
-Thormanby | 1857 | Windhound | | Won the 1860 Derby.
+Thormanby | 1857 | Windhound | | Won the 1860 Derby. His mother was covered by both Windhound and Melbourne; his chestnut coat points to Windhound.
 Atlantic | 1871 | Thormanby | | Won the 2,000 Guineas in 1874.
 Le Sancy | 1884 | Atlantic | |
 Le Samaritain | 1895 | Le Sancy | |
@@ -41,10 +41,10 @@ Selim | 1802 | Buzzard | |
 Sultan | 1816 | Selim | |
 Bay Middleton | 1833 | Sultan | | Won the 1836 Derby.
 The Flying Dutchman | 1846 | Bay Middleton | | Won the 1849 Derby.
-Dollar | 1860 | The Flying Dutchman | | Raced and stood in France. The Byerley Turk's line survives today mainly through him.
+Dollar | 1860 | The Flying Dutchman | | Won the 1864 Goodwood Cup, then stood at stud in France. The Byerley Turk's line survives today mainly through him.
 Androcles | 1870 | Dollar | |
 Cambyse | 1884 | Androcles | |
-Gardefeu | 1898 | Cambyse | |
+Gardefeu | 1895 | Cambyse | |
 Chouberski | 1902 | Gardefeu | |
 Bruleur | 1910 | Chouberski | | Won the 1913 Grand Prix de Paris.
 Ksar | 1918 | Bruleur | | Won the Prix de l'Arc de Triomphe in 1921 and 1922.
@@ -92,7 +92,7 @@ Precipitation | 1933 | Hurry On | | Won the Ascot Gold Cup in 1937.
 Sheshoon | 1956 | Precipitation | |
 Sassafras | 1967 | Sheshoon | | Beat Nijinsky by a head in the 1970 Prix de l'Arc de Triomphe.
 
-Flying Childers | 1714 | Darley Arabian | k | Called the first great racehorse in England. His line died out; his full brother's didn't.
+Flying Childers | 1715 | Darley Arabian | k | Called the first great racehorse in England. His line died out; his full brother's didn't.
 Bartlett's Childers | 1716 | Darley Arabian | | Flying Childers' full brother. He never raced, but he carried on the line.
 Squirt | 1732 | Bartlett's Childers | |
 Marske | 1750 | Squirt | |
