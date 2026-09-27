@@ -646,7 +646,12 @@ function introHTML() {
     <div class="chips">${TRIES.map(([a, b]) => `<button type="button" class="chip" data-pair="${esc(a)}|${esc(b)}">${esc(a)} &amp; ${esc(b)}</button>`).join('')}</div>
     <h3>Show</h3>
     <div class="chips">${Object.entries(GROUPS).map(([key, g]) => `<button type="button" class="chip" data-group="${key}">${esc(g.title)}</button>`).join('')}</div>
-    ${aboutHTML()}`;
+    ${aboutHTML()}
+    <footer class="jd-foot">
+      <a href="https://junkdrawer.works/">Part of junkdrawer.works</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://junkdrawer.works/privacy.html">Privacy</a>
+    </footer>`;
 }
 
 function aboutHTML() {

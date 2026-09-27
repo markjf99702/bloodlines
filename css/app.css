@@ -396,6 +396,16 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 15px; }
 details p { font-size: 15px; color: var(--ink-2); margin-top: 10px !important; }
 details a { color: inherit; }
 
+.jd-foot {
+  margin-top: 22px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.jd-foot a { color: var(--ink-2); text-decoration: none; }
+.jd-foot a:hover, .jd-foot a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Phone and narrow windows: header, chart, then the panel underneath. No page scroll. */
