@@ -924,7 +924,9 @@ new MutationObserver(recolor).observe(document.documentElement, { attributes: tr
 if (!readHash({ fly: true })) render();
 // Back to the bare address, or to one that names no horse, shows the introduction again.
 window.addEventListener('hashchange', () => { if (!readHash({ fly: true })) clearAll(); });
-document.fonts?.ready.then(() => { widthCache.clear(); requestDraw(); });
+// The font can arrive after the first drawing. It changes the widths of the names, and of the legend, which can
+// then wrap onto a second row on a narrow phone.
+document.fonts?.ready.then(() => { widthCache.clear(); measureObstacles(); requestDraw(); });
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -938,6 +940,7 @@ window.bloodlines = {
   clear: clearAll,
   labels: () => placedLabels.map(p => p.n.name),
   years: () => placedYears.map(({ year, box }) => ({ year, left: box.minx, top: box.miny, right: box.maxx, bottom: box.maxy })),
+  obstacles: () => obstacles.map(({ box }) => ({ left: box.minx, top: box.miny, right: box.maxx, bottom: box.maxy })),
   settle: () => { if (anim) { Object.assign(cam, anim.to); anim = null; } draw(); },
   where: name => { const n = horse(name); return { x: sx(n.x), y: sy(n.y) }; },
   view: () => ({ W, H, k: cam.k, fitK, r1: geo.r1 }),

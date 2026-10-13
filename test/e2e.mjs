@@ -86,6 +86,32 @@ for (const [width, height] of [[375, 667], [360, 780], [320, 568]]) {
 }
 await resizeTo(390, 844);
 
+// The font can arrive after the chart is first drawn (held back here until the app has started). At 375 wide
+// it wraps the legend onto a second row, and the chart still knows where every legend button ends up.
+const lateCtx = await browser.newContext({ viewport: { width: 375, height: 667 }, deviceScaleFactor: 2, hasTouch: true, serviceWorkers: 'block' });
+const late = await lateCtx.newPage();
+late.on('pageerror', e => problems.push(e.message));
+let letFontIn;
+const fontHeld = new Promise(r => { letFontIn = r; });
+await late.route('**/*.woff2', async r => { await fontHeld; await r.continue(); });
+await late.goto(base, { waitUntil: 'domcontentloaded' });
+await late.waitForFunction(() => window.bloodlines);
+letFontIn();
+await late.evaluate(() => document.fonts.ready);
+const legendAfterFont = await late.evaluate(() => {
+  const stage = document.getElementById('stage').getBoundingClientRect();
+  const kept = window.bloodlines.obstacles();
+  const buttons = [...document.querySelectorAll('.legend button')];
+  const lost = buttons.filter(b => {
+    const r = b.getBoundingClientRect();
+    return !kept.some(o => o.left <= r.left - stage.left && o.right >= r.right - stage.left && o.top <= r.top - stage.top && o.bottom >= r.bottom - stage.top);
+  });
+  return { rows: new Set(buttons.map(b => b.getBoundingClientRect().top)).size, lost: lost.map(b => b.textContent) };
+});
+assert.equal(legendAfterFont.rows, 2, 'the legend is on one row at 375 with the font in');
+assert.deepEqual(legendAfterFont.lost, [], 'the chart lost track of the legend when the font arrived');
+await lateCtx.close();
+
 // Find a horse by typing part of its name.
 await page.fill('#q', 'secr');
 await page.locator('#suggest li').first().waitFor();
