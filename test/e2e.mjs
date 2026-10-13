@@ -286,6 +286,28 @@ await page.reload();
 assert.ok(await page.title(), 'the page did not load offline');
 await ctx.setOffline(false);
 
+// Every tool at junkdrawer.works shares one address, and so one set of offline copies. When the app's service
+// worker starts, it clears out its own old copy and leaves another tool's alone.
+const sharedCtx = await browser.newContext();
+const shared = await sharedCtx.newPage();
+shared.on('pageerror', e => problems.push(e.message));
+await shared.route('**/another-tool/', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Another tool</title>' }));
+await shared.goto(base + 'another-tool/');
+await shared.evaluate(async () => {
+  await (await caches.open('another-tool-v1')).put('./', new Response('another tool, offline'));
+  await (await caches.open('bloodlines-v0')).put('../', new Response('an old copy of this app'));
+});
+await shared.unroute('**/another-tool/');
+await shared.goto(base);
+await shared.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated', null, { timeout: 30000 });
+const left = await shared.evaluate(async () => ({
+  another: await caches.has('another-tool-v1') && !!(await caches.match('another-tool/', { cacheName: 'another-tool-v1' })),
+  old: await caches.has('bloodlines-v0'),
+}));
+assert.ok(left.another, 'the app’s service worker deleted another tool’s offline copy');
+assert.ok(!left.old, 'the app’s service worker left its own old offline copy behind');
+await sharedCtx.close();
+
 assert.deepEqual(problems.filter(p => !p.startsWith('failed:')), [], 'problems while using it');
 await browser.close();
 server.close();
