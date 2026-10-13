@@ -759,7 +759,7 @@ function compareHTML(a, b) {
       <div><h4>${esc(a.name)}</h4>${chain(ca, a, { here: a, meet: ca })}</div>
       <div><h4>${esc(b.name)}</h4>${chain(ca, b, { here: b, meet: ca })}</div>
     </div>
-    <p class="fine">Before ${esc(ca.name)}, they share the line back to ${the(ca.founder)}: ${ca.depth} more ${ca.depth === 1 ? 'generation' : 'generations'}.</p>
+    ${ca.depth ? `<p class="fine">Before ${esc(ca.name)}, they share the line back to ${the(ca.founder)}: ${ca.depth} more ${ca.depth === 1 ? 'generation' : 'generations'}.</p>` : ''}
     ${fine}
     ${again}`;
 }

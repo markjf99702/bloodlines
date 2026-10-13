@@ -89,6 +89,7 @@ await panel.getByRole('button', { name: /How is Secretariat related to/ }).click
 await panel.getByRole('button', { name: 'Frankel' }).click();
 await page.waitForFunction(() => document.querySelector('#panel .big')?.textContent === 'Second cousins, twice removed');
 assert.match(await panel.innerText(), /Their fathers’ lines meet at Nearco/);
+assert.match(await panel.innerText(), /Before Nearco, they share the line back to the Darley Arabian: \d+ more generations\./);
 assert.equal(decodeURIComponent(new URL(page.url()).hash), '#Secretariat/Frankel');
 
 // Ring years never hide under the legend, the zoom buttons or the hint.
@@ -115,6 +116,11 @@ await resizeTo(390, 844);
 // Horses from different founders share no father's line.
 await page.goto(base + '#Seabiscuit/Secretariat');
 await page.waitForFunction(() => /Not related/.test(document.querySelector('#panel .big')?.textContent));
+
+// When the lines meet at the founder himself, there's no line before him to talk about.
+await page.goto(base + '#Flying%20Childers/Eclipse');
+await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Flying Childers & Eclipse');
+assert.doesNotMatch(await panel.innerText(), /more generations|Before Darley Arabian/);
 
 // A link that got cut off, or names nothing on the chart, opens the introduction (or the one horse it
 // names) rather than a blank panel, and the app still starts up properly behind it.
