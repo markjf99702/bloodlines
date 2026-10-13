@@ -270,14 +270,16 @@ function draw() {
   const order = [...must, ...byPrio].filter(n => (seen.has(n) ? false : (seen.add(n), true)));
 
   // The years go in once any founders at the front of the queue have their names, where there's room.
+  // The horse under the pointer doesn't count, so pointing at a horse doesn't move the founders' names.
   let yearsIn = false;
   const placeYears = () => {
     yearsIn = true;
     for (const t of years) if (!placed.some(p => overlaps(p.box, t.box))) placed.push(t);
   };
+  if (!order.find(n => n !== state.hover)?.isFounder) placeYears();
 
   for (const n of order) {
-    if (!yearsIn && !n.isFounder) placeYears();
+    if (!yearsIn && !n.isFounder && n !== state.hover) placeYears();
     if (!visible(n)) continue;
     const strong = must.includes(n) && (n === state.sel || n === state.other || n === common || n === state.hover || (f && f.marked.has(n)));
     const weight = n.isFounder ? 700 : strong || n.isKey ? 600 : 400;

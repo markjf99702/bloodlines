@@ -63,6 +63,18 @@ for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
   }
 }
 
+// Pointing at a horse there names it first, but leaves the founders and the ring years where they were.
+const ringYears = () => page.evaluate(() => window.bloodlines.years());
+const still = await ringYears();
+const chart = await page.locator('#chart').boundingBox();
+const eclipse = await page.evaluate(() => window.bloodlines.where('Eclipse'));
+await page.mouse.move(chart.x + eclipse.x, chart.y + eclipse.y);
+await settle();
+assert.equal((await labels())[0], 'Eclipse', 'the pointer never got to Eclipse');
+assert.deepEqual(await ringYears(), still, 'pointing at a horse moved the ring years and the founders’ names');
+await page.mouse.move(chart.x + 2, chart.y + 2); // nothing there
+await settle();
+
 // On narrow phones the legend wraps rather than running off the side.
 for (const [width, height] of [[375, 667], [360, 780], [320, 568]]) {
   await resizeTo(width, height);
