@@ -159,14 +159,14 @@ await page.evaluate(() => { location.hash = '#Frankel'; });
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Frankel');
 
 // Going back to the bare address, or to one that names no horse, closes the card.
-const afterHashChange = () => page.evaluate(() => new Promise(r => setTimeout(r, 50)));
+const showing = text => page.waitForFunction(t => document.querySelector('#panel h2')?.textContent === t, text, { timeout: 3000 }).catch(() => {});
 await page.evaluate(() => { location.hash = '#nobody'; });
-await afterHashChange();
+await showing(intro);
 assert.equal(await heading(), intro, 'an address naming no horse left the card open');
 await page.evaluate(() => { location.hash = '#Secretariat/Frankel'; });
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Secretariat & Frankel');
 await page.goBack();
-await afterHashChange();
+await showing(intro);
 assert.equal(await page.evaluate(() => location.hash), '');
 assert.equal(await heading(), intro, 'going back to the bare address left the card open');
 
