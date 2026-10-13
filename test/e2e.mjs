@@ -206,6 +206,18 @@ await page.evaluate(() => window.bloodlines.clear());
 assert.ok((await panelEnd()).content <= 40, 'the introduction ends with a double gap above the home indicator');
 await homeBar(0);
 
+// The chart follows a theme set on the page after it has loaded, as the Artifact viewer can do.
+await page.click('[data-act="zoom-fit"]');
+const corner = () => page.evaluate(async () => {
+  await new Promise(requestAnimationFrame);
+  window.bloodlines.settle();
+  return [...document.getElementById('chart').getContext('2d').getImageData(1, 1, 1, 1).data.slice(0, 3)];
+});
+await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+assert.deepEqual(await corner(), [0x13, 0x1a, 0x17], 'the chart stayed light when the page turned dark');
+await page.evaluate(() => { delete document.documentElement.dataset.theme; });
+assert.deepEqual(await corner(), [0xf4, 0xef, 0xe6], 'the chart stayed dark when the page turned light again');
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 

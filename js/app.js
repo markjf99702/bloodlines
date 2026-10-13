@@ -915,7 +915,10 @@ function readHash({ fly }) {
 readColors();
 new ResizeObserver(resize).observe(stage);
 resize();
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); requestDraw(); });
+const recolor = () => { readColors(); requestDraw(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
+// The Artifact viewer can also switch palettes after load, by setting data-theme on the page.
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 if (!readHash({ fly: true })) render();
 window.addEventListener('hashchange', () => readHash({ fly: true }));
 document.fonts?.ready.then(() => { widthCache.clear(); requestDraw(); });
