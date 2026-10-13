@@ -898,11 +898,12 @@ function writeHash() {
 }
 
 function readHash({ fly }) {
-  const h = decodeURIComponent(location.hash.slice(1));
+  let h;
+  try { h = decodeURIComponent(location.hash.slice(1)); } catch { return false; } // a link cut off mid-name, like #Secretariat%2
   if (!h) return false;
-  if (h.startsWith('show=') && GROUPS[h.slice(5)]) { showGroup(h.slice(5)); return true; }
+  if (h.startsWith('show=') && Object.hasOwn(GROUPS, h.slice(5))) { showGroup(h.slice(5)); return true; }
   const [a, b] = h.split('/').map(s => horse(s.replace(/'/g, '’')) || horse(s));
-  if (a && b) { compare(a, b, { fly }); return true; }
+  if (a && b && a !== b) { compare(a, b, { fly }); return true; }
   if (a) { select(a, { fly }); return true; }
   return false;
 }

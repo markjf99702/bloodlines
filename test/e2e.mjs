@@ -116,6 +116,19 @@ await resizeTo(390, 844);
 await page.goto(base + '#Seabiscuit/Secretariat');
 await page.waitForFunction(() => /Not related/.test(document.querySelector('#panel .big')?.textContent));
 
+// A link that got cut off, or names nothing on the chart, opens the introduction (or the one horse it
+// names) rather than a blank panel, and the app still starts up properly behind it.
+const intro = 'Three stallions, three hundred years';
+for (const [link, opens] of [['#Secretariat%2', intro], ['#100%', intro], ['#Secretariat/Secretariat', 'Secretariat'],
+  ['#show=constructor', intro], ['#show=toString', intro], ['#show=__proto__', intro]]) {
+  await page.goto('about:blank');
+  await page.goto(base + link);
+  assert.equal(await page.evaluate(() => document.querySelector('#panel h2')?.textContent), opens, `${link} opens on the wrong thing`);
+  assert.ok(await page.evaluate(() => !!window.bloodlines), `${link} stopped the app starting up`);
+}
+await page.evaluate(() => { location.hash = '#Frankel'; });
+await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Frankel');
+
 // Tap a horse on the chart itself.
 await page.goto(base + '#Justify');
 await settle();
