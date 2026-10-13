@@ -196,6 +196,14 @@ for (const [link, opens] of [['#Secretariat%2', intro], ['#100%', intro], ['#Sec
 await page.evaluate(() => { location.hash = '#Frankel'; });
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Frankel');
 
+// A group link still opens in a browser from before Object.hasOwn (Safari 15.3 and older), as it always has.
+const older = await ctx.newPage();
+older.on('pageerror', e => problems.push(e.message));
+await older.addInitScript(() => { delete Object.hasOwn; });
+await older.goto(base + '#show=us3');
+assert.equal(await older.evaluate(() => document.querySelector('#panel h2')?.textContent), 'American Triple Crown winners', 'a group link stopped the app in an older browser');
+await older.close();
+
 // Going back to the bare address, or to one that names no horse, closes the card.
 const showing = text => page.waitForFunction(t => document.querySelector('#panel h2')?.textContent === t, text, { timeout: 3000 }).catch(() => {});
 await page.evaluate(() => { location.hash = '#nobody'; });
