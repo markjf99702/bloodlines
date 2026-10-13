@@ -203,6 +203,7 @@ h1 {
 }
 .zoom button + button { border-top: 1px solid var(--rule); }
 .zoom button:hover { background: var(--chip); }
+.zoom button:focus-visible { outline-offset: -3px; border-radius: 11px; } /* inside the box, which clips anything outside */
 .zoom svg { width: 19px; height: 19px; }
 
 .hint {

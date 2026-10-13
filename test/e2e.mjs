@@ -178,6 +178,17 @@ await settle();
 await page.mouse.click(box.x + 4, box.y + box.height - 4); // a touch this close to the panel gets steered onto its buttons
 await page.waitForFunction(() => /Three stallions/.test(document.querySelector('#panel').textContent));
 
+// The zoom buttons are a labelled group, and the box around them doesn't cut off their keyboard focus ring.
+assert.equal(await page.getByRole('group', { name: 'Zoom' }).count(), 1, 'the zoom buttons are not a labelled group');
+await page.focus('#q');
+for (let i = 0; i < 10 && !(await page.evaluate(() => document.activeElement.dataset.act === 'zoom-in')); i++) await page.keyboard.press('Tab');
+const ring = await page.evaluate(() => {
+  const b = document.activeElement, cs = getComputedStyle(b);
+  return { act: b.dataset.act, shown: b.matches(':focus-visible'), reach: parseFloat(cs.outlineOffset) + parseFloat(cs.outlineWidth) };
+});
+assert.ok(ring.act === 'zoom-in' && ring.shown, 'Tab never reached the zoom buttons');
+assert.ok(ring.reach <= 0, 'the focus ring of a zoom button is drawn outside it, where the box around it cuts it off');
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 
