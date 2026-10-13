@@ -400,7 +400,6 @@ details a { color: inherit; }
 
 .jd-foot {
   margin-top: 22px;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   color: var(--muted);
   font-size: 14px;
   text-align: center;
@@ -429,7 +428,7 @@ details a { color: inherit; }
   .find { grid-area: find; width: 100%; }
   .find input { height: 38px; }
   .stage { grid-column: 1; grid-row: 2; }
-  .panel { grid-column: 1; grid-row: 3; border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px 22px; }
+  .panel { grid-column: 1; grid-row: 3; border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px max(22px, env(safe-area-inset-bottom)); }
   .panel h2 { font-size: 25px; }
   .legend { top: 8px; left: 8px; right: 8px; gap: 2px; }
   .legend button { font-size: 12.5px; padding: 3px 7px 3px 5px; gap: 5px; white-space: nowrap; }

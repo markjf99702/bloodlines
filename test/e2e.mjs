@@ -189,6 +189,23 @@ const ring = await page.evaluate(() => {
 assert.ok(ring.act === 'zoom-in' && ring.shown, 'Tab never reached the zoom buttons');
 assert.ok(ring.reach <= 0, 'the focus ring of a zoom button is drawn outside it, where the box around it cuts it off');
 
+// On a phone with a home indicator (34px here), the end of a card stays clear of it, and the
+// introduction doesn't end with the gap counted twice.
+const cdp = await ctx.newCDPSession(page);
+const homeBar = bottom => cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: 0, right: 0, bottom } });
+const panelEnd = () => page.evaluate(() => {
+  const p = document.getElementById('panel');
+  p.scrollTop = p.scrollHeight;
+  const last = p.lastElementChild, r = last.getBoundingClientRect();
+  return { box: innerHeight - r.bottom, content: innerHeight - r.bottom + parseFloat(getComputedStyle(last).paddingBottom) };
+});
+await homeBar(34);
+await page.evaluate(() => window.bloodlines.compare('Secretariat', 'Frankel'));
+assert.ok((await panelEnd()).box > 33, 'the end of a card sits behind the home indicator'); // to the nearest pixel scrolled
+await page.evaluate(() => window.bloodlines.clear());
+assert.ok((await panelEnd()).content <= 40, 'the introduction ends with a double gap above the home indicator');
+await homeBar(0);
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 
