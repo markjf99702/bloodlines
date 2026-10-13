@@ -22,7 +22,9 @@ const js = (await Promise.all(['js/horses.js', 'js/tree.js', 'js/app.js'].map(re
 
 const html = await read('index.html');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script type="module"')).trim();
-await writeFile(out, `<title>Bloodlines</title>
+await writeFile(out, `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bloodlines</title>
 <meta name="description" content="The racehorse family tree, from three stallions to Secretariat, Frankel and Winx.">
 <style>
 ${css}</style>

@@ -53,4 +53,4 @@ To put it online with GitHub Pages: **Settings → Pages → Build and deploymen
 - `css/app.css`: layout and the light and dark palettes.
 - `fonts/`: Source Serif 4 (SIL Open Font License), served from here so nothing loads from elsewhere.
 - `sw.js`: keeps a copy for using offline.
-- `test/tree.test.mjs`, `test/e2e.mjs`: the tests.
+- `test/tree.test.mjs`, `test/single-file.test.mjs`, `test/e2e.mjs`: the tests.
