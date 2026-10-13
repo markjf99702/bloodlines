@@ -853,6 +853,7 @@ function hideSuggest() {
 }
 function pickResult(n) {
   input.value = '';
+  results = [];
   hideSuggest();
   if (!matchMedia('(pointer: fine)').matches) input.blur();
   choose(n);
@@ -869,6 +870,7 @@ input.addEventListener('keydown', e => {
     if (!suggest.hidden) hideSuggest();
     else if (state.picking) { state.picking = false; render(); }
     input.value = '';
+    results = [];
   }
 });
 suggest.addEventListener('pointerdown', e => {

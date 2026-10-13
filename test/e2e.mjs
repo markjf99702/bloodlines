@@ -113,6 +113,18 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
 }
 await resizeTo(390, 844);
 
+// Enter in an empty search box does nothing: it doesn't bring back an earlier search's result.
+const heading = () => page.evaluate(() => document.querySelector('#panel h2')?.textContent);
+await page.focus('#q');
+await page.keyboard.press('Enter');
+assert.equal(await heading(), 'American Pharoah & Justify', 'Enter in the empty search box picked an earlier result');
+await page.fill('#q', 'frank');
+await page.locator('#suggest li').first().waitFor();
+await page.keyboard.press('Escape');
+assert.equal(await page.inputValue('#q'), '');
+await page.keyboard.press('Enter');
+assert.equal(await heading(), 'American Pharoah & Justify', 'Enter after Escape picked the result it had just cleared');
+
 // Horses from different founders share no father's line.
 await page.goto(base + '#Seabiscuit/Secretariat');
 await page.waitForFunction(() => /Not related/.test(document.querySelector('#panel .big')?.textContent));
