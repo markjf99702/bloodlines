@@ -92,6 +92,16 @@ const underneath = await page.evaluate(() => {
 assert.deepEqual(underneath, [], 'ring years drawn under the legend or the zoom buttons');
 assert.ok((await page.evaluate(() => window.bloodlines.years())).length > 1, 'hardly any ring years on the chart');
 
+// Both horses being compared are named on the chart, even at the crowded ends of their branches.
+for (const [width, height] of [[390, 844], [1280, 800]]) {
+  await resizeTo(width, height);
+  await page.evaluate(() => window.bloodlines.compare('American Pharoah', 'Justify'));
+  await settle();
+  const shown = await labels();
+  for (const name of ['American Pharoah', 'Justify']) assert.ok(shown.includes(name), `${name} has no name on the chart at ${width} x ${height}`);
+}
+await resizeTo(390, 844);
+
 // Horses from different founders share no father's line.
 await page.goto(base + '#Seabiscuit/Secretariat');
 await page.waitForFunction(() => /Not related/.test(document.querySelector('#panel .big')?.textContent));

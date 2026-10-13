@@ -288,6 +288,7 @@ function draw() {
     const dotR = (n.isFounder ? 5.5 : 3.4) * Math.min(gain, 1.6);
     const hh = size * 0.62;
     const free = b => onScreen(b) && !placed.some(p => overlaps(p.box, b));
+    const off = dotR + 5;
     let spot = null;
 
     if (!n.children.length) {
@@ -295,13 +296,13 @@ function draw() {
       const a = n.angle;
       const left = Math.cos(a) < 0;
       const rot = left ? a + Math.PI : a;
-      const off = dotR + 5;
       const box = obb(x + Math.cos(a) * (off + w / 2), y + Math.sin(a) * (off + w / 2), w / 2 + 2, hh, rot);
       if (free(box)) spot = { box, tx: x + Math.cos(a) * off, ty: y + Math.sin(a) * off, rot, align: left ? 'right' : 'left' };
-    } else {
+    }
+    if (!spot && (n.children.length || inPlay.has(n))) {
       // Fathers get a level label beside the dot, on the side away from the centre. Horses in play
-      // (selected, compared, or on a lit line) and the founders can also go on the other side, above or below.
-      const off = dotR + 5;
+      // (selected, compared, or on a lit line) and the founders can also go on the other side, above or below,
+      // and so can a horse in play at the end of a line when there's no room along its spoke.
       const out = Math.cos(n.angle) >= -0.2 ? 1 : -1;
       const tries = [
         { tx: x + out * off, ty: y, cx: x + out * (off + w / 2), cy: y, align: out > 0 ? 'left' : 'right' },
