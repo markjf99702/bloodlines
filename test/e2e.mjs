@@ -129,6 +129,17 @@ assert.equal(await heading(), 'American Pharoah & Justify', 'Enter after Escape 
 await page.goto(base + '#Seabiscuit/Secretariat');
 await page.waitForFunction(() => /Not related/.test(document.querySelector('#panel .big')?.textContent));
 
+// In the lists of fathers, a name that wraps stays lined up on the left, and a year stays on one line.
+const ragged = await page.evaluate(() => {
+  const lines = el => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()]; };
+  const names = [...document.querySelectorAll('#panel .chain .link')]
+    .filter(b => lines(b).some(l => Math.abs(l.left - b.getBoundingClientRect().left) > 1));
+  const years = [...document.querySelectorAll('#panel .chain .yr')]
+    .filter(y => new Set(lines(y).map(l => Math.round(l.top))).size > 1);
+  return [...names, ...years].map(el => el.textContent);
+});
+assert.deepEqual(ragged, [], 'names centred over two lines, or years split, in the lists of fathers');
+
 // When the lines meet at the founder himself, there's no line before him to talk about.
 await page.goto(base + '#Flying%20Childers/Eclipse');
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Flying Childers & Eclipse');

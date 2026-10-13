@@ -283,6 +283,7 @@ h1 {
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent);
   text-underline-offset: 3px;
+  text-align: left;
   cursor: pointer;
 }
 .link:hover { text-decoration-color: currentColor; }
@@ -369,7 +370,7 @@ h1 {
 }
 .chain li.here { font-weight: 700; }
 .chain li.meet::after { background: var(--paper); box-shadow: inset 0 0 0 2px var(--ink); }
-.chain .yr { margin-left: auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.chain .yr { margin-left: auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pair h4 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
