@@ -429,7 +429,7 @@ details a { color: inherit; }
   .stage { grid-column: 1; grid-row: 2; }
   .panel { grid-column: 1; grid-row: 3; border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px 22px; }
   .panel h2 { font-size: 25px; }
-  .legend { top: 8px; left: 8px; right: 8px; gap: 2px; flex-wrap: nowrap; }
+  .legend { top: 8px; left: 8px; right: 8px; gap: 2px; }
   .legend button { font-size: 12.5px; padding: 3px 7px 3px 5px; gap: 5px; white-space: nowrap; }
   .legend .sw { width: 9px; height: 9px; }
   .zoom { right: 10px; bottom: 10px; }

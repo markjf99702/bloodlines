@@ -62,6 +62,16 @@ for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
     assert.ok(shown.includes(f), `${f} has no name on the opening view at ${width} x ${height}`);
   }
 }
+
+// On narrow phones the legend wraps rather than running off the side.
+for (const [width, height] of [[375, 667], [360, 780], [320, 568]]) {
+  await resizeTo(width, height);
+  const cut = await page.evaluate(() => {
+    const stage = document.getElementById('stage').getBoundingClientRect();
+    return [...document.querySelectorAll('.legend button')].filter(b => b.getBoundingClientRect().right > stage.right).map(b => b.textContent);
+  });
+  assert.deepEqual(cut, [], `the legend runs off the side at ${width} x ${height}`);
+}
 await resizeTo(390, 844);
 
 // Find a horse by typing part of its name.
