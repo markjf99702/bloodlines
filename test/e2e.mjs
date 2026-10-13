@@ -158,6 +158,18 @@ for (const [link, opens] of [['#Secretariat%2', intro], ['#100%', intro], ['#Sec
 await page.evaluate(() => { location.hash = '#Frankel'; });
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Frankel');
 
+// Going back to the bare address, or to one that names no horse, closes the card.
+const afterHashChange = () => page.evaluate(() => new Promise(r => setTimeout(r, 50)));
+await page.evaluate(() => { location.hash = '#nobody'; });
+await afterHashChange();
+assert.equal(await heading(), intro, 'an address naming no horse left the card open');
+await page.evaluate(() => { location.hash = '#Secretariat/Frankel'; });
+await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Secretariat & Frankel');
+await page.goBack();
+await afterHashChange();
+assert.equal(await page.evaluate(() => location.hash), '');
+assert.equal(await heading(), intro, 'going back to the bare address left the card open');
+
 // Tap a horse on the chart itself.
 await page.goto(base + '#Justify');
 await settle();

@@ -920,7 +920,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
 // The Artifact viewer can also switch palettes after load, by setting data-theme on the page.
 new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 if (!readHash({ fly: true })) render();
-window.addEventListener('hashchange', () => readHash({ fly: true }));
+// Back to the bare address, or to one that names no horse, shows the introduction again.
+window.addEventListener('hashchange', () => { if (!readHash({ fly: true })) clearAll(); });
 document.fonts?.ready.then(() => { widthCache.clear(); requestDraw(); });
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
