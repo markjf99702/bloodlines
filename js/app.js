@@ -67,6 +67,7 @@ let W = 0, H = 0, dpr = 1, fitK = 0;
 const cam = { x: 0, y: 0, k: 1 };
 let colors = {};
 let placedLabels = [];
+let placedYears = [];
 let obstacles = [];   // boxes of the legend, zoom buttons and hint, which sit on top of the chart
 let hintGone = false;
 const hint = document.getElementById('hint');
@@ -234,28 +235,96 @@ function draw() {
   }
   ctx.restore();
 
+  // Labels: most important first, skipping any that would overlap one already placed. They're all
+  // placed before anything is drawn, so the ring years can give way to the founders' names and still
+  // be drawn under the dots.
   const placed = [...obstacles];
+  const visible = n => {
+    const x = sx(n.x), y = sy(n.y);
+    return x > -20 && y > -20 && x < W + 20 && y < H + 20;
+  };
 
   // Ring years, up the gap at the top of the chart.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   const ringFont = `500 12px ${FONT}`;
-  ctx.font = ringFont;
+  const years = [];
   for (let y = 1700; y <= 2000; y += 50) {
     const x0 = sx(0), y0 = sy(-geo.radius(y));
     const w = textWidth(String(y), ringFont);
     if (y % 100 && k < fitK * 1.6) continue;
     const box = obb(x0, y0, w / 2 + 3, 8, 0);
-    if (!onScreen(box)) continue;
-    placed.push({ box });
-    halo(String(y), x0, y0, colors.muted);
+    if (onScreen(box)) years.push({ year: y, x0, y0, box });
   }
 
-  // Dots.
-  const visible = n => {
-    const x = sx(n.x), y = sy(n.y);
-    return x > -20 && y > -20 && x < W + 20 && y < H + 20;
+  const must = [];
+  if (state.hover) must.push(state.hover);
+  if (state.sel) must.push(state.sel);
+  if (state.other) must.push(state.other);
+  if (common) must.push(common);
+  if (f) {
+    for (const m of f.marked) must.push(m);
+    const trail = [...f.lit].sort((a, b) => b.prio - a.prio);
+    must.push(...trail);
+  }
+  const inPlay = new Set(must);
+  const seen = new Set();
+  const order = [...must, ...byPrio].filter(n => (seen.has(n) ? false : (seen.add(n), true)));
+
+  // The years go in once any founders at the front of the queue have their names, where there's room.
+  let yearsIn = false;
+  const placeYears = () => {
+    yearsIn = true;
+    for (const t of years) if (!placed.some(p => overlaps(p.box, t.box))) placed.push(t);
   };
+
+  for (const n of order) {
+    if (!yearsIn && !n.isFounder) placeYears();
+    if (!visible(n)) continue;
+    const strong = must.includes(n) && (n === state.sel || n === state.other || n === common || n === state.hover || (f && f.marked.has(n)));
+    const weight = n.isFounder ? 700 : strong || n.isKey ? 600 : 400;
+    const size = n.isFounder ? 15 : n.isKey || strong ? 13 : 12;
+    const font = `${weight} ${size}px ${FONT}`;
+    const w = textWidth(n.name, font);
+    const x = sx(n.x), y = sy(n.y);
+    const dotR = (n.isFounder ? 5.5 : 3.4) * Math.min(gain, 1.6);
+    const hh = size * 0.62;
+    const free = b => onScreen(b) && !placed.some(p => overlaps(p.box, b));
+    let spot = null;
+
+    if (!n.children.length) {
+      // Leaves read outward along their spoke, flipped on the left so they're never upside down.
+      const a = n.angle;
+      const left = Math.cos(a) < 0;
+      const rot = left ? a + Math.PI : a;
+      const off = dotR + 5;
+      const box = obb(x + Math.cos(a) * (off + w / 2), y + Math.sin(a) * (off + w / 2), w / 2 + 2, hh, rot);
+      if (free(box)) spot = { box, tx: x + Math.cos(a) * off, ty: y + Math.sin(a) * off, rot, align: left ? 'right' : 'left' };
+    } else {
+      // Fathers get a level label beside the dot, on the side away from the centre. Horses in play
+      // (selected, compared, or on a lit line) and the founders can also go on the other side, above or below.
+      const off = dotR + 5;
+      const out = Math.cos(n.angle) >= -0.2 ? 1 : -1;
+      const tries = [
+        { tx: x + out * off, ty: y, cx: x + out * (off + w / 2), cy: y, align: out > 0 ? 'left' : 'right' },
+        { tx: x - out * off, ty: y, cx: x - out * (off + w / 2), cy: y, align: out > 0 ? 'right' : 'left' },
+        { tx: x, ty: y - dotR - hh - 1, cx: x, cy: y - dotR - hh - 1, align: 'center' },
+        { tx: x, ty: y + dotR + hh + 1, cx: x, cy: y + dotR + hh + 1, align: 'center' },
+      ];
+      for (const t of inPlay.has(n) || n.isFounder ? tries : tries.slice(0, 1)) {
+        const box = obb(t.cx, t.cy, w / 2 + 2, hh, 0);
+        if (free(box)) { spot = { ...t, box, rot: 0 }; break; }
+      }
+    }
+    if (spot) placed.push({ ...spot, n, font });
+  }
+  if (!yearsIn) placeYears();
+
+  // Ring years.
+  ctx.font = ringFont;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const t of placed) if (t.year) halo(String(t.year), t.x0, t.y0, colors.muted);
+
+  // Dots.
   for (const n of nodes) {
     if (!visible(n)) continue;
     const dim = f && !f.lit.has(n);
@@ -291,62 +360,9 @@ function draw() {
   if (common && common !== state.sel && common !== state.other) ring(common, 8, true);
   if (state.hover && !(f && f.marked.has(state.hover))) ring(state.hover, 7);
 
-  // Labels: most important first, skipping any that would overlap one already placed.
-  const must = [];
-  if (state.hover) must.push(state.hover);
-  if (state.sel) must.push(state.sel);
-  if (state.other) must.push(state.other);
-  if (common) must.push(common);
-  if (f) {
-    for (const m of f.marked) must.push(m);
-    const trail = [...f.lit].sort((a, b) => b.prio - a.prio);
-    must.push(...trail);
-  }
-  const inPlay = new Set(must);
-  const seen = new Set();
-  const order = [...must, ...byPrio].filter(n => (seen.has(n) ? false : (seen.add(n), true)));
-
-  for (const n of order) {
-    if (!visible(n)) continue;
-    const strong = must.includes(n) && (n === state.sel || n === state.other || n === common || n === state.hover || (f && f.marked.has(n)));
-    const weight = n.isFounder ? 700 : strong || n.isKey ? 600 : 400;
-    const size = n.isFounder ? 15 : n.isKey || strong ? 13 : 12;
-    const font = `${weight} ${size}px ${FONT}`;
-    const w = textWidth(n.name, font);
-    const x = sx(n.x), y = sy(n.y);
-    const dotR = (n.isFounder ? 5.5 : 3.4) * Math.min(gain, 1.6);
-    const hh = size * 0.62;
-    const free = b => onScreen(b) && !placed.some(p => overlaps(p.box, b));
-    let spot = null;
-
-    if (!n.children.length) {
-      // Leaves read outward along their spoke, flipped on the left so they're never upside down.
-      const a = n.angle;
-      const left = Math.cos(a) < 0;
-      const rot = left ? a + Math.PI : a;
-      const off = dotR + 5;
-      const box = obb(x + Math.cos(a) * (off + w / 2), y + Math.sin(a) * (off + w / 2), w / 2 + 2, hh, rot);
-      if (free(box)) spot = { box, tx: x + Math.cos(a) * off, ty: y + Math.sin(a) * off, rot, align: left ? 'right' : 'left' };
-    } else {
-      // Fathers get a level label beside the dot, on the side away from the centre. Horses in play
-      // (selected, compared, or on a lit line) can also go on the other side, above or below.
-      const off = dotR + 5;
-      const out = Math.cos(n.angle) >= -0.2 ? 1 : -1;
-      const tries = [
-        { tx: x + out * off, ty: y, cx: x + out * (off + w / 2), cy: y, align: out > 0 ? 'left' : 'right' },
-        { tx: x - out * off, ty: y, cx: x - out * (off + w / 2), cy: y, align: out > 0 ? 'right' : 'left' },
-        { tx: x, ty: y - dotR - hh - 1, cx: x, cy: y - dotR - hh - 1, align: 'center' },
-        { tx: x, ty: y + dotR + hh + 1, cx: x, cy: y + dotR + hh + 1, align: 'center' },
-      ];
-      for (const t of inPlay.has(n) ? tries : tries.slice(0, 1)) {
-        const box = obb(t.cx, t.cy, w / 2 + 2, hh, 0);
-        if (free(box)) { spot = { ...t, box, rot: 0 }; break; }
-      }
-    }
-    if (!spot) continue;
-    placed.push({ box: spot.box, n });
-    const { tx, ty, rot, align } = spot;
-
+  // Names, over everything else.
+  for (const { n, font, tx, ty, rot, align } of placed) {
+    if (!n) continue;
     const dim = f && !f.lit.has(n);
     ctx.font = font;
     ctx.textAlign = align;
@@ -364,6 +380,7 @@ function draw() {
     ctx.globalAlpha = 1;
   }
   placedLabels = placed.filter(p => p.n);
+  placedYears = placed.filter(p => p.year);
 }
 
 function halo(text, x, y, fill) {
@@ -910,6 +927,7 @@ window.bloodlines = {
   group: key => showGroup(key),
   clear: clearAll,
   labels: () => placedLabels.map(p => p.n.name),
+  years: () => placedYears.map(({ year, box }) => ({ year, left: box.minx, top: box.miny, right: box.maxx, bottom: box.maxy })),
   settle: () => { if (anim) { Object.assign(cam, anim.to); anim = null; } draw(); },
   where: name => { const n = horse(name); return { x: sx(n.x), y: sy(n.y) }; },
   view: () => ({ W, H, k: cam.k, fitK, r1: geo.r1 }),

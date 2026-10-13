@@ -37,11 +37,32 @@ await page.evaluate(() => document.fonts.ready);
 
 const panel = page.locator('#panel');
 const settle = () => page.evaluate(() => window.bloodlines.settle());
+const labels = () => page.evaluate(() => window.bloodlines.labels());
+// Changes the window size and waits for the chart to catch up.
+async function resizeTo(width, height) {
+  await page.setViewportSize({ width, height });
+  await page.waitForFunction(() => {
+    const r = document.getElementById('stage').getBoundingClientRect();
+    const v = window.bloodlines.view();
+    return v.W === r.width && v.H === r.height;
+  });
+  await settle();
+}
 
 // The tree is drawn and labelled.
 await settle();
-assert.ok(await page.evaluate(() => window.bloodlines.labels().length) > 15, 'hardly any labels on the chart');
+assert.ok((await labels()).length > 15, 'hardly any labels on the chart');
 assert.match(await panel.innerText(), /Three stallions/);
+
+// The three founders are named on the opening view, on a small phone and a desktop too.
+for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
+  await resizeTo(width, height);
+  const shown = await labels();
+  for (const f of ['Darley Arabian', 'Godolphin Arabian', 'Byerley Turk']) {
+    assert.ok(shown.includes(f), `${f} has no name on the opening view at ${width} x ${height}`);
+  }
+}
+await resizeTo(390, 844);
 
 // Find a horse by typing part of its name.
 await page.fill('#q', 'secr');
@@ -59,6 +80,17 @@ await panel.getByRole('button', { name: 'Frankel' }).click();
 await page.waitForFunction(() => document.querySelector('#panel .big')?.textContent === 'Second cousins, twice removed');
 assert.match(await panel.innerText(), /Their fathers’ lines meet at Nearco/);
 assert.equal(decodeURIComponent(new URL(page.url()).hash), '#Secretariat/Frankel');
+
+// Ring years never hide under the legend, the zoom buttons or the hint.
+await settle();
+const underneath = await page.evaluate(() => {
+  const stage = document.getElementById('stage').getBoundingClientRect();
+  const covers = [...document.querySelectorAll('.legend button, .zoom, .hint:not(.gone)')].map(el => el.getBoundingClientRect());
+  return window.bloodlines.years().filter(y => covers.some(r => y.left + stage.left < r.right && y.right + stage.left > r.left
+    && y.top + stage.top < r.bottom && y.bottom + stage.top > r.top)).map(y => y.year);
+});
+assert.deepEqual(underneath, [], 'ring years drawn under the legend or the zoom buttons');
+assert.ok((await page.evaluate(() => window.bloodlines.years())).length > 1, 'hardly any ring years on the chart');
 
 // Horses from different founders share no father's line.
 await page.goto(base + '#Seabiscuit/Secretariat');
