@@ -12,10 +12,11 @@ self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
-// Every tool at junkdrawer.works shares this address and its caches, so clear out only this one's old copies.
+// Every tool at junkdrawer.works shares this address and its caches, so clear out only this one's old copies,
+// by their exact name: bloodlines-v and a number. A tool with a longer name, like bloodlines-x, keeps its own.
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith('bloodlines-') && k !== CACHE).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE && /^bloodlines-v[0-9]+$/.test(k)).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
