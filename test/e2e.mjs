@@ -122,8 +122,20 @@ assert.match(await panel.innerText(), /By Bold Ruler/);
 assert.match(await panel.innerText(), /22 generations after the Darley Arabian/);
 assert.equal(new URL(page.url()).hash, '#Secretariat');
 
-// Ask how he's related to another horse.
+// Ask how he's related to another horse. The search box's prompt fits the box: on a phone it doesn't name him,
+// since the card above does.
+const prompt = () => page.evaluate(() => {
+  const input = document.getElementById('q'), cs = getComputedStyle(input);
+  const span = document.createElement('span');
+  span.style.cssText = `position: absolute; white-space: pre; font: ${cs.font}`;
+  span.textContent = input.placeholder;
+  document.body.append(span);
+  const fits = span.getBoundingClientRect().width <= input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  span.remove();
+  return { text: input.placeholder, fits };
+});
 await panel.getByRole('button', { name: /How is Secretariat related to/ }).click();
+assert.deepEqual(await prompt(), { text: 'Compare with…', fits: true }, 'the search box’s prompt is cut off on a phone');
 await panel.getByRole('button', { name: 'Frankel' }).click();
 await page.waitForFunction(() => document.querySelector('#panel .big')?.textContent === 'Second cousins, twice removed');
 assert.match(await panel.innerText(), /Their fathers’ lines meet at Nearco/);
@@ -162,6 +174,20 @@ await page.keyboard.press('Escape');
 assert.equal(await page.inputValue('#q'), '');
 await page.keyboard.press('Enter');
 assert.equal(await heading(), 'American Pharoah & Justify', 'Enter after Escape picked the result it had just cleared');
+
+// On a computer the prompt names the horse when there's room, and drops the name when there isn't. Turning the
+// window narrow while picking drops it too.
+await resizeTo(1280, 800);
+const pickFor = async name => {
+  await page.evaluate(n => window.bloodlines.select(n), name);
+  await panel.locator('[data-act="pick"]').click();
+  return prompt();
+};
+assert.deepEqual(await pickFor('The Flying Dutchman'), { text: 'Compare with…', fits: true }, 'a long name in the prompt is cut off');
+assert.deepEqual(await pickFor('Secretariat'), { text: 'Compare Secretariat with…', fits: true }, 'the prompt doesn’t name the horse on a computer');
+await resizeTo(390, 844);
+await page.waitForFunction(() => document.getElementById('q').placeholder === 'Compare with…', null, { timeout: 3000 }).catch(() => {});
+assert.deepEqual(await prompt(), { text: 'Compare with…', fits: true }, 'the prompt stayed too long when the window got narrow');
 
 // Horses from different founders share no father's line.
 await page.goto(base + '#Seabiscuit/Secretariat');

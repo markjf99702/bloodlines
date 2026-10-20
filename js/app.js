@@ -798,7 +798,7 @@ function render() {
   else if (state.group) panel.innerHTML = groupHTML(state.group);
   else panel.innerHTML = introHTML();
   panel.scrollTop = 0;
-  input.placeholder = state.picking ? `Compare ${the(state.sel)} with…` : 'Find a horse';
+  setPrompt();
   writeHash();
   requestDraw();
 }
@@ -846,6 +846,20 @@ const input = document.getElementById('q');
 const suggest = document.getElementById('suggest');
 let results = [];
 let active = 0;
+
+// The search box's prompt. While picking a second horse it names the first if that fits in the box. On a phone, or
+// for a long name, it's just "Compare with…": the card names him anyway.
+function setPrompt() {
+  let text = 'Find a horse';
+  if (state.picking && state.sel) {
+    text = `Compare ${the(state.sel)} with…`;
+    const cs = getComputedStyle(input);
+    const room = input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (textWidth(text, `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`) > room - 2) text = 'Compare with…';
+  }
+  input.placeholder = text;
+}
+new ResizeObserver(setPrompt).observe(input); // turning a phone, say
 
 function showSuggest() {
   results = search(nodes, input.value);
@@ -942,7 +956,7 @@ if (!readHash({ fly: true })) render();
 window.addEventListener('hashchange', () => { if (!readHash({ fly: true })) clearAll(); });
 // The font can arrive after the first drawing. It changes the widths of the names, and of the legend, which can
 // then wrap onto a second row on a narrow phone.
-document.fonts?.ready.then(() => { widthCache.clear(); measureObstacles(); requestDraw(); });
+document.fonts?.ready.then(() => { widthCache.clear(); measureObstacles(); setPrompt(); requestDraw(); });
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
