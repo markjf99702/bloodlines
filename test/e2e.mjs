@@ -297,6 +297,24 @@ const ring = await page.evaluate(() => {
 assert.ok(ring.act === 'zoom-in' && ring.shown, 'Tab never reached the zoom buttons');
 assert.ok(ring.reach <= 0, 'the focus ring of a zoom button is drawn outside it, where the box around it cuts it off');
 
+// Every card ends with the line back to junkdrawer.works and its privacy page, not only the introduction.
+const footerLinks = () => page.evaluate(() => {
+  const last = document.getElementById('panel').lastElementChild;
+  return last?.matches('footer.jd-foot') ? [...last.querySelectorAll('a')].map(a => a.href) : null;
+});
+for (const [card, open] of [
+  ['introduction', () => window.bloodlines.clear()],
+  ['horse', () => window.bloodlines.select('Frankel')],
+  ['comparison', () => window.bloodlines.compare('Secretariat', 'Frankel')],
+  ['group', () => window.bloodlines.group('mares')],
+  ['Related to whom?', () => { window.bloodlines.select('Winx'); document.querySelector('#panel [data-act="pick"]').click(); }],
+]) {
+  await page.evaluate(open);
+  assert.deepEqual(await footerLinks(), ['https://junkdrawer.works/', 'https://junkdrawer.works/privacy.html'],
+    `the ${card} card doesn’t end with the junkdrawer.works footer`);
+}
+assert.equal(await heading(), 'Related to whom?');
+
 // On a phone with a home indicator (34px here), the end of a card stays clear of it, and the
 // introduction doesn't end with the gap counted twice.
 const cdp = await ctx.newCDPSession(page);

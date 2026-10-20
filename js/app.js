@@ -667,13 +667,16 @@ function introHTML() {
     <div class="chips">${TRIES.map(([a, b]) => `<button type="button" class="chip" data-pair="${esc(a)}|${esc(b)}">${esc(a)} &amp; ${esc(b)}</button>`).join('')}</div>
     <h3>Show</h3>
     <div class="chips">${Object.entries(GROUPS).map(([key, g]) => `<button type="button" class="chip" data-group="${key}">${esc(g.title)}</button>`).join('')}</div>
-    ${aboutHTML()}
+    ${aboutHTML()}`;
+}
+
+// The line every card ends with, the introduction and the others alike.
+const FOOTER = `
     <footer class="jd-foot">
       <a href="https://junkdrawer.works/">Part of junkdrawer.works</a>
       <span aria-hidden="true">·</span>
       <a href="https://junkdrawer.works/privacy.html">Privacy</a>
     </footer>`;
-}
 
 function aboutHTML() {
   return `
@@ -792,11 +795,13 @@ function groupHTML(key) {
 }
 
 function render() {
-  if (state.picking && state.sel) panel.innerHTML = pickHTML(state.sel);
-  else if (state.sel && state.other) panel.innerHTML = compareHTML(state.sel, state.other);
-  else if (state.sel) panel.innerHTML = horseHTML(state.sel);
-  else if (state.group) panel.innerHTML = groupHTML(state.group);
-  else panel.innerHTML = introHTML();
+  let card;
+  if (state.picking && state.sel) card = pickHTML(state.sel);
+  else if (state.sel && state.other) card = compareHTML(state.sel, state.other);
+  else if (state.sel) card = horseHTML(state.sel);
+  else if (state.group) card = groupHTML(state.group);
+  else card = introHTML();
+  panel.innerHTML = card + FOOTER;
   panel.scrollTop = 0;
   setPrompt();
   writeHash();
