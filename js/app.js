@@ -929,6 +929,9 @@ document.addEventListener('keydown', e => {
 // Opening a card from the introduction adds a step to the browser's history, so Back (or a phone's back gesture)
 // closes it again instead of leaving Bloodlines. Going on to another horse or a comparison changes that step rather
 // than adding one per horse, and closing the card takes the step back, so it doesn't leave a second introduction behind.
+// Shown inside another page, as an embedded copy is, the history is that page's, so there the card only changes the
+// address: taking a step back could take the page around it back instead.
+const ownPage = window === window.top;
 function writeHash() {
   let h = '';
   if (state.sel && state.other) h = `${encodeURIComponent(state.sel.name)}/${encodeURIComponent(state.other.name)}`;
@@ -939,7 +942,7 @@ function writeHash() {
   // Some embedded views don't allow changing the address; the app works the same without it.
   try {
     if (!h && history.state?.bloodlines) history.back(); // a card opened here: back to the introduction's step
-    else if (h && !was) history.pushState({ bloodlines: 1 }, '', `#${h}`);
+    else if (h && !was && ownPage) history.pushState({ bloodlines: 1 }, '', `#${h}`);
     else history.replaceState(history.state, '', h ? `#${h}` : location.pathname + location.search);
   } catch {}
 }

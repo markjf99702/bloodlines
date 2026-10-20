@@ -290,6 +290,25 @@ await page.waitForFunction(t => !location.hash && document.querySelector('#panel
 await page.goBack();
 assert.equal(page.url(), 'about:blank', 'closing a card left an extra step in the history');
 
+// Shown inside another page, as an embedded copy is, the history belongs to that page: opening a card adds no step to
+// it, and closing the card doesn't take that page back a step it made itself.
+const hostCtx = await browser.newContext({ serviceWorkers: 'block' });
+const host = await hostCtx.newPage();
+host.on('pageerror', e => problems.push(e.message));
+await host.route('**/host/', r => r.fulfill({ contentType: 'text/html', body: `<!doctype html><title>Host</title><iframe src="${base}" style="width: 1200px; height: 680px"></iframe>` }));
+await host.goto(base + 'host/');
+const framed = host.mainFrame().childFrames()[0];
+await framed.waitForFunction(() => window.bloodlines);
+const hostSteps = await host.evaluate(() => history.length);
+await framed.click('.founders [data-horse="Darley Arabian"]');
+await framed.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Darley Arabian');
+assert.equal(await host.evaluate(() => history.length), hostSteps, 'opening a card inside another page added a step to that page’s history');
+await host.evaluate(() => history.pushState(null, '', '#its-own-step'));
+await framed.click('#panel [data-act="close"]');
+const tidied = await framed.waitForFunction(() => !location.hash, null, { timeout: 3000 }).then(() => true, () => false);
+assert.ok(tidied && new URL(host.url()).hash === '#its-own-step', 'closing a card inside another page took that page back');
+await hostCtx.close();
+
 // Tap a horse on the chart itself.
 await page.goto(base + '#Justify');
 await settle();
