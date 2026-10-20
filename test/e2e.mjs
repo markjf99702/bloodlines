@@ -387,6 +387,40 @@ for (const theme of ['light', 'dark']) {
 }
 await page.evaluate(() => { delete document.documentElement.dataset.theme; });
 
+// A phone held sideways (844 x 390) keeps the chart beside a narrower panel instead of squeezing it into a strip
+// above it. The title, the search box, the legend, the hint and the card stay clear of the notch on whichever side
+// it is, and the controls at the bottom of the chart stay clear of the home indicator.
+await resizeTo(844, 390);
+const sideways = await page.evaluate(() => {
+  const r = s => document.querySelector(s).getBoundingClientRect();
+  return { stage: r('#stage'), panel: r('#panel'), lede: getComputedStyle(document.querySelector('.lede')).display };
+});
+assert.ok(sideways.panel.left >= sideways.stage.right - 1 && sideways.panel.top < sideways.stage.bottom, 'the panel sits under the chart on a phone held sideways');
+assert.equal(sideways.panel.width, 340, 'the panel beside the chart is not the narrower one');
+assert.ok(sideways.stage.height > 300 && sideways.stage.width > 480, `the chart is ${sideways.stage.width} x ${sideways.stage.height} on a phone held sideways`);
+assert.equal(sideways.lede, 'none', 'the lede takes up room on a phone held sideways');
+await page.evaluate(() => window.bloodlines.select('Secretariat'));
+const edges = () => page.evaluate(() => {
+  const r = el => el.getBoundingClientRect();
+  const legend = [...document.querySelectorAll('.legend button')].map(r);
+  const bottoms = [r(document.querySelector('.zoom')), r(document.getElementById('hint'))];
+  return {
+    left: Math.min(r(document.querySelector('h1')).left, r(document.getElementById('hint')).left, ...legend.map(b => b.left)),
+    right: Math.max(r(document.getElementById('q')).right, r(document.querySelector('#panel h2')).right),
+    bottom: Math.max(...bottoms.map(b => b.bottom)),
+  };
+});
+for (const [left, right] of [[47, 0], [0, 47]]) {
+  await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left, right, bottom: 21 } });
+  const e = await edges();
+  assert.ok(e.left >= left, `something on the left starts at ${e.left}px, under a notch ${left}px wide`);
+  assert.ok(e.right <= 844 - right, `something on the right ends at ${e.right}px, under a notch ${right}px wide`);
+  assert.ok(e.bottom <= 390 - 21, `the zoom buttons or the hint reach ${e.bottom}px, onto the home indicator`);
+}
+await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: 0, right: 0, bottom: 0 } });
+assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone held sideways');
+await resizeTo(390, 844);
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 
