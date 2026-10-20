@@ -1,5 +1,5 @@
 import { HORSES, FOUNDERS } from './horses.js';
-import { buildTree, layout, lineage, relate, search, generations } from './tree.js';
+import { buildTree, layout, lineage, relate, search, generations, the } from './tree.js';
 
 const tree = buildTree(HORSES, FOUNDERS);
 const geo = layout(tree);
@@ -625,7 +625,8 @@ const panel = document.getElementById('panel');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const swatch = n => `<i class="sw" style="--c: var(${FOUNDER_VAR[n.founder.name]})"></i>`;
 const hlink = n => `<button type="button" class="link" data-horse="${esc(n.name)}">${esc(n.name)}</button>`;
-const the = f => (f.name.startsWith('Byerley') ? 'the Byerley Turk' : `the ${f.name}`);
+// The same link in a sentence, where a founder takes "the": By the Darley Arabian.
+const theLink = n => `${n.isFounder ? 'the ' : ''}${hlink(n)}`;
 const list = items => (items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 
 function descendantWord(g, n) {
@@ -690,9 +691,9 @@ function horseHTML(n) {
   const kidWord = kids.every(c => !c.tags.includes('m')) ? (kids.length === 1 ? 'Son' : 'Sons') : (kids.length === 1 ? 'Daughter' : 'Offspring');
   const meta = n.isFounder
     ? `Foaled ${yearText(n)} · one of the three founders`
-    : `Foaled ${yearText(n)} · ${generations(n)} after ${the(f)}`;
+    : `Foaled ${yearText(n)} · ${generations(n)} after ${esc(the(f))}`;
   const family = [];
-  if (n.parent) family.push(`By ${hlink(n.parent)}.`);
+  if (n.parent) family.push(`By ${theLink(n.parent)}.`);
   if (kids.length) family.push(`${kidWord} on the chart: ${list(kids.map(hlink))}.`);
   if (n.ends) family.push(n.tags.includes('m') ? 'As a mare, she ends her father’s line here.' : 'As a gelding, he ends his father’s line here.');
   return `
@@ -701,7 +702,7 @@ function horseHTML(n) {
     <p class="meta">${meta}</p>
     ${n.note ? `<p class="note">${esc(n.note)}</p>` : ''}
     ${family.length ? `<p>${family.join(' ')}</p>` : ''}
-    <button type="button" class="act primary" data-act="pick">How is ${esc(n.name)} related to…</button>
+    <button type="button" class="act primary" data-act="pick">How is ${esc(the(n))} related to…</button>
     ${n.isFounder ? '' : `<h3>Father to son, from the founder</h3>${chain(f, n, { here: n })}`}`;
 }
 
@@ -715,17 +716,30 @@ function pickHTML(n) {
     <div class="chips">${picks.map(h => `<button type="button" class="chip" data-horse="${esc(h.name)}">${esc(h.name)}</button>`).join('')}</div>`;
 }
 
+// Why two horses from different founders share no father's line. A founder doesn't go back to anyone, and he
+// doesn't carry the other founders through his mother, so he gets a sentence of his own.
+function apart(a, b) {
+  if (a.isFounder && b.isFounder) {
+    return `The ${esc(a.name)} and the ${esc(b.name)} are two of the three founders, so their fathers’ lines never meet.`;
+  }
+  if (a.isFounder || b.isFounder) {
+    const [other, founder] = a.isFounder ? [b, a] : [a, b];
+    return `${esc(other.name)} goes back to ${esc(the(other.founder))}, and ${esc(the(founder))} is one of the founders himself, so their fathers’ lines never meet.`;
+  }
+  return `${esc(a.name)} goes back to ${esc(the(a.founder))} and ${esc(b.name)} to ${esc(the(b.founder))}, so their fathers’ lines never meet. Through their mothers, both carry all three founders many times over.`;
+}
+
 function compareHTML(a, b) {
   const r = relate(a, b);
   const head = `<div class="phead"><p class="kicker">How they’re related</p><button type="button" class="x" data-act="close" aria-label="Close">×</button></div>
     <h2>${esc(a.name)} &amp; ${esc(b.name)}</h2>`;
-  const again = `<button type="button" class="act" data-act="pick">Compare ${esc(a.name)} with someone else</button>`;
+  const again = `<button type="button" class="act" data-act="pick">Compare ${esc(the(a))} with someone else</button>`;
   const fine = `<p class="fine">Counting fathers only. Through their mothers, thoroughbreds are related many times over.</p>`;
 
   if (r.kind === 'none') {
     return `${head}
       <p class="big">${esc(r.headline)}</p>
-      <p>${esc(a.name)} goes back to ${the(a.founder)} and ${esc(b.name)} to ${the(b.founder)}, so their fathers’ lines never meet. Through their mothers, both carry all three founders many times over.</p>
+      <p>${apart(a, b)}</p>
       <div class="pair">
         <div><h4>${esc(a.name)}</h4>${chain(a.founder, a, { here: a })}</div>
         <div><h4>${esc(b.name)}</h4>${chain(b.founder, b, { here: b })}</div>
@@ -737,22 +751,24 @@ function compareHTML(a, b) {
   if (r.kind === 'ancestor') {
     const { older, younger } = r;
     const g = Math.max(r.ga, r.gb);
+    // The founders' years, and Jigg's, are only known roughly (c. 1700), so a gap counted from one is too.
+    const about = older.tags.includes('c') || younger.tags.includes('c') ? 'about ' : '';
     return `${head}
       <p class="big">${esc(r.headline)}</p>
-      <p>${esc(younger.name)} was foaled ${younger.year - older.year} years after ${esc(older.name)}, ${g} ${g === 1 ? 'generation' : 'generations'} down the line.</p>
+      <p>${esc(younger.name)} was foaled ${about}${younger.year - older.year} years after ${esc(the(older))}, ${g} ${g === 1 ? 'generation' : 'generations'} down the line.</p>
       ${chain(older, younger, { here: younger, meet: older })}
       ${again}`;
   }
 
   let why;
   if (r.kind === 'siblings') {
-    why = `Both are by ${hlink(ca)}. (In racing, “brother” and “sister” are kept for horses with the same mother.)`;
+    why = `Both are by ${theLink(ca)}. (In racing, “brother” and “sister” are kept for horses with the same mother.)`;
   } else if (r.kind === 'uncle') {
     const { older, younger } = r;
     const gy = younger === a ? r.ga : r.gb;
-    why = `${esc(older.name)} is a ${descendantWord(1, older)} of ${hlink(ca)}, and ${esc(younger.name)} is his ${descendantWord(gy, younger)}.`;
+    why = `${esc(older.name)} is a ${descendantWord(1, older)} of ${theLink(ca)}, and ${esc(younger.name)} is his ${descendantWord(gy, younger)}.`;
   } else {
-    why = `Their fathers’ lines meet at ${hlink(ca)}, foaled ${yearText(ca)}. ${esc(a.name)} is his ${descendantWord(r.ga, a)}; ${esc(b.name)} is his ${descendantWord(r.gb, b)}.`;
+    why = `Their fathers’ lines meet at ${theLink(ca)}, foaled ${yearText(ca)}. ${esc(a.name)} is his ${descendantWord(r.ga, a)}; ${esc(b.name)} is his ${descendantWord(r.gb, b)}.`;
   }
   return `${head}
     <p class="big">${esc(r.headline)}</p>
@@ -761,7 +777,7 @@ function compareHTML(a, b) {
       <div><h4>${esc(a.name)}</h4>${chain(ca, a, { here: a, meet: ca })}</div>
       <div><h4>${esc(b.name)}</h4>${chain(ca, b, { here: b, meet: ca })}</div>
     </div>
-    ${ca.depth ? `<p class="fine">Before ${esc(ca.name)}, they share the line back to ${the(ca.founder)}: ${ca.depth} more ${ca.depth === 1 ? 'generation' : 'generations'}.</p>` : ''}
+    ${ca.depth ? `<p class="fine">Before ${esc(ca.name)}, they share the line back to ${esc(the(ca.founder))}: ${ca.depth} more ${ca.depth === 1 ? 'generation' : 'generations'}.</p>` : ''}
     ${fine}
     ${again}`;
 }
@@ -782,7 +798,7 @@ function render() {
   else if (state.group) panel.innerHTML = groupHTML(state.group);
   else panel.innerHTML = introHTML();
   panel.scrollTop = 0;
-  input.placeholder = state.picking ? `Compare ${state.sel.name} with…` : 'Find a horse';
+  input.placeholder = state.picking ? `Compare ${the(state.sel)} with…` : 'Find a horse';
   writeHash();
   requestDraw();
 }

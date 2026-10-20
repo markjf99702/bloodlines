@@ -84,6 +84,13 @@ const TIMES = ['', 'once', 'twice'];
 const removed = n => (n ? `, ${TIMES[n] || `${n} times`} removed` : '');
 const female = n => n.tags.includes('m');
 
+// A horse's name as it reads in a sentence. The founders take "the", the way breeders say it (by the Darley Arabian);
+// every other horse goes by its name alone.
+export function the(n) {
+  return n.tags.includes('founder') ? `the ${n.name}` : n.name;
+}
+const capital = s => s[0].toUpperCase() + s.slice(1);
+
 // "father", "grandfather", "great-grandfather", "second great-grandfather", ...
 export function ancestorWord(gens) {
   if (gens === 1) return 'father';
@@ -120,8 +127,8 @@ export function relate(a, b) {
   const gb = b.depth - ancestor.depth;
   const base = { ancestor, ga, gb };
 
-  if (ga === 0) return { ...base, kind: 'ancestor', older: a, younger: b, headline: `${a.name} is ${b.name}\u2019s ${ancestorWord(gb)}` };
-  if (gb === 0) return { ...base, kind: 'ancestor', older: b, younger: a, headline: `${b.name} is ${a.name}\u2019s ${ancestorWord(ga)}` };
+  if (ga === 0) return { ...base, kind: 'ancestor', older: a, younger: b, headline: `${capital(the(a))} is ${the(b)}\u2019s ${ancestorWord(gb)}` };
+  if (gb === 0) return { ...base, kind: 'ancestor', older: b, younger: a, headline: `${capital(the(b))} is ${the(a)}\u2019s ${ancestorWord(ga)}` };
   if (ga === 1 && gb === 1) return { ...base, kind: 'siblings', headline: 'Same father' };
   if (ga === 1) return { ...base, kind: 'uncle', older: a, younger: b, headline: `${a.name} is ${b.name}\u2019s ${uncleWord(gb, female(a))}` };
   if (gb === 1) return { ...base, kind: 'uncle', older: b, younger: a, headline: `${b.name} is ${a.name}\u2019s ${uncleWord(ga, female(b))}` };

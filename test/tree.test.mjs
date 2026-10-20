@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HORSES, FOUNDERS } from '../js/horses.js';
-import { buildTree, layout, lineage, relate, search, ordinal } from '../js/tree.js';
+import { buildTree, layout, lineage, relate, search, ordinal, the } from '../js/tree.js';
 
 const tree = buildTree(HORSES, FOUNDERS);
 layout(tree);
@@ -52,6 +52,15 @@ test('relationships read the way a family tree would', () => {
   assert.equal(relate(h('Frankel'), h('Enable')).headline, 'Frankel is Enable’s uncle');
   assert.equal(relate(h('Enable'), h('Adayar')).headline, 'First cousins');
   assert.equal(relate(h('Winx'), h('Winx')).kind, 'same');
+});
+
+test('the founders take "the" in a sentence, other horses go by name alone', () => {
+  assert.equal(the(h('Darley Arabian')), 'the Darley Arabian');
+  assert.equal(the(h('Byerley Turk')), 'the Byerley Turk');
+  assert.equal(the(h('Eclipse')), 'Eclipse');
+  assert.equal(the(h('The Tetrarch')), 'The Tetrarch');
+  assert.equal(relate(h('Darley Arabian'), h('Eclipse')).headline, 'The Darley Arabian is Eclipse’s second great-grandfather');
+  assert.equal(relate(h('Jigg'), h('Byerley Turk')).headline, 'The Byerley Turk is Jigg’s father');
 });
 
 test('ordinals', () => {

@@ -183,6 +183,30 @@ await page.goto(base + '#Flying%20Childers/Eclipse');
 await page.waitForFunction(() => document.querySelector('#panel h2')?.textContent === 'Flying Childers & Eclipse');
 assert.doesNotMatch(await panel.innerText(), /more generations|Before Darley Arabian/);
 
+// In the cards' sentences the founders take "the", as they do everywhere else, and a gap counted from a year that's
+// only known roughly is "about" so many years.
+const says = async (open, ...sentences) => {
+  await page.evaluate(open);
+  const text = await panel.innerText();
+  for (const s of sentences) assert.ok(text.includes(s), `the card doesn’t say “${s}”:\n${text}`);
+  return text;
+};
+await says(() => window.bloodlines.compare('Flying Childers', 'Eclipse'), 'Flying Childers is a son of the Darley Arabian, and Eclipse is his 2nd great-grandson.');
+await says(() => window.bloodlines.select('Jigg'), 'By the Byerley Turk.');
+await says(() => window.bloodlines.select('Darley Arabian'), 'How is the Darley Arabian related to…');
+await says(() => window.bloodlines.compare('Darley Arabian', 'Eclipse'), 'The Darley Arabian is Eclipse’s second great-grandfather',
+  'Eclipse was foaled about 64 years after the Darley Arabian, 4 generations down the line.', 'Compare the Darley Arabian with someone else');
+await says(() => window.bloodlines.compare('Flying Childers', 'Bartlett’s Childers'), 'Both are by the Darley Arabian.');
+const withFounder = await says(() => window.bloodlines.compare('Secretariat', 'Byerley Turk'),
+  'Secretariat goes back to the Darley Arabian, and the Byerley Turk is one of the founders himself, so their fathers’ lines never meet.');
+assert.doesNotMatch(withFounder, /carry all three founders/, 'a founder doesn’t carry the founders after him through his mother');
+await says(() => window.bloodlines.compare('Godolphin Arabian', 'Tourbillon'),
+  'Tourbillon goes back to the Byerley Turk, and the Godolphin Arabian is one of the founders himself');
+await says(() => window.bloodlines.compare('Darley Arabian', 'Byerley Turk'),
+  'The Darley Arabian and the Byerley Turk are two of the three founders, so their fathers’ lines never meet.');
+await says(() => window.bloodlines.compare('Seabiscuit', 'Secretariat'),
+  'Seabiscuit goes back to the Godolphin Arabian and Secretariat to the Darley Arabian, so their fathers’ lines never meet. Through their mothers, both carry all three founders many times over.');
+
 // A link that got cut off, or names nothing on the chart, opens the introduction (or the one horse it
 // names) rather than a blank panel, and the app still starts up properly behind it.
 const intro = 'Three stallions, three hundred years';
