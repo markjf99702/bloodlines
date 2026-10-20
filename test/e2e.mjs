@@ -266,6 +266,30 @@ await showing(intro);
 assert.equal(await page.evaluate(() => location.hash), '');
 assert.equal(await heading(), intro, 'going back to the bare address left the card open');
 
+// Opening a card from the introduction adds one step to the browser's history: Back closes the card, however many
+// horses were looked at since, rather than leaving Bloodlines. Closing a card with × takes that step back too, so
+// the next Back leaves as it would have before the card was opened.
+const opened = name => page.waitForFunction(t => document.querySelector('#panel h2')?.textContent === t, name);
+await page.goto('about:blank');
+await page.goto(base);
+await panel.locator('.founders [data-horse="Darley Arabian"]').click();
+await opened('Darley Arabian');
+await panel.getByRole('button', { name: 'Flying Childers', exact: true }).click();
+await opened('Flying Childers');
+await panel.locator('[data-act="pick"]').click();
+await panel.getByRole('button', { name: 'Eclipse', exact: true }).click();
+await opened('Flying Childers & Eclipse');
+await page.goBack();
+await showing(intro);
+assert.equal(page.url(), base, 'Back after opening a card left Bloodlines');
+assert.equal(await heading(), intro, 'Back didn’t close the card');
+await panel.locator('.founders [data-horse="Byerley Turk"]').click();
+await opened('Byerley Turk');
+await panel.getByRole('button', { name: 'Close' }).click();
+await page.waitForFunction(t => !location.hash && document.querySelector('#panel h2')?.textContent === t, intro);
+await page.goBack();
+assert.equal(page.url(), 'about:blank', 'closing a card left an extra step in the history');
+
 // Tap a horse on the chart itself.
 await page.goto(base + '#Justify');
 await settle();

@@ -926,14 +926,22 @@ document.addEventListener('keydown', e => {
 
 // ---------------------------------------------------------------- links you can share: #Secretariat, #Secretariat/Frankel, #show=us3
 
+// Opening a card from the introduction adds a step to the browser's history, so Back (or a phone's back gesture)
+// closes it again instead of leaving Bloodlines. Going on to another horse or a comparison changes that step rather
+// than adding one per horse, and closing the card takes the step back, so it doesn't leave a second introduction behind.
 function writeHash() {
   let h = '';
   if (state.sel && state.other) h = `${encodeURIComponent(state.sel.name)}/${encodeURIComponent(state.other.name)}`;
   else if (state.sel) h = encodeURIComponent(state.sel.name);
   else if (state.group) h = `show=${state.group}`;
-  const url = h ? `#${h}` : location.pathname + location.search;
+  const was = location.hash.slice(1);
+  if (was === h) return;
   // Some embedded views don't allow changing the address; the app works the same without it.
-  try { if (location.hash.slice(1) !== h) history.replaceState(null, '', url); } catch {}
+  try {
+    if (!h && history.state?.bloodlines) history.back(); // a card opened here: back to the introduction's step
+    else if (h && !was) history.pushState({ bloodlines: 1 }, '', `#${h}`);
+    else history.replaceState(history.state, '', h ? `#${h}` : location.pathname + location.search);
+  } catch {}
 }
 
 function readHash({ fly }) {
