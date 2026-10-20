@@ -276,6 +276,25 @@ assert.deepEqual(await corner(), [0x13, 0x1a, 0x17], 'the chart stayed light whe
 await page.evaluate(() => { delete document.documentElement.dataset.theme; });
 assert.deepEqual(await corner(), [0xf4, 0xef, 0xe6], 'the chart stayed dark when the page turned light again');
 
+// The small grey text (the hint, the ring years, the years in the lists) reads at 4.5:1 or better on every background
+// it sits on, in both palettes: the chart, the panel, and a highlighted row or chip.
+const greyContrast = () => page.evaluate(() => {
+  const cs = getComputedStyle(document.documentElement);
+  const lum = name => {
+    const n = parseInt(cs.getPropertyValue(name).trim().slice(1), 16);
+    return [n >> 16, (n >> 8) & 255, n & 255].map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+      .reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
+  };
+  const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+  return Object.fromEntries(['--bg', '--paper', '--chip'].map(bg => [bg, ratio('--muted', bg)]));
+});
+for (const theme of ['light', 'dark']) {
+  await page.evaluate(t => { document.documentElement.dataset.theme = t; }, theme);
+  const ratios = await greyContrast();
+  for (const [bg, r] of Object.entries(ratios)) assert.ok(r >= 4.5, `grey text on ${bg} is only ${r.toFixed(2)}:1 in the ${theme} palette`);
+}
+await page.evaluate(() => { delete document.documentElement.dataset.theme; });
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 
