@@ -456,6 +456,8 @@ details a { color: inherit; }
 @media (min-width: 600px) and (max-height: 499px) {
   .app { grid-template-columns: minmax(0, 1fr) 340px; }
   .lede { display: none; }
+  /* The chart can be as narrow as 260px here, so the hint wraps before it reaches the zoom buttons. */
+  .hint { max-width: calc(100% - 84px); }
 }
 @media (max-width: 380px) {
   .pair { grid-template-columns: 1fr; }

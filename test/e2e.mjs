@@ -421,6 +421,24 @@ await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: 
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone held sideways');
 await resizeTo(390, 844);
 
+// A short window on a computer gets the same layout, where the chart can be quite narrow. The longer hint for a mouse
+// wraps there rather than running under the zoom buttons.
+const shortCtx = await browser.newContext({ viewport: { width: 640, height: 480 }, serviceWorkers: 'block' });
+const short = await shortCtx.newPage();
+short.on('pageerror', e => problems.push(e.message));
+await short.goto(base);
+await short.evaluate(() => document.fonts.ready);
+for (const [width, height] of [[640, 480], [600, 450]]) {
+  await short.setViewportSize({ width, height });
+  const clash = await short.evaluate(() => {
+    const h = document.getElementById('hint').getBoundingClientRect(), z = document.querySelector('.zoom').getBoundingClientRect();
+    return { mouse: getComputedStyle(document.querySelector('#hint .mouse')).display !== 'none',
+      under: h.left < z.right && h.right > z.left && h.top < z.bottom && h.bottom > z.top };
+  });
+  assert.deepEqual(clash, { mouse: true, under: false }, `the hint runs under the zoom buttons at ${width} x ${height}`);
+}
+await shortCtx.close();
+
 // Fits a phone: nothing scrolls sideways.
 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways on a phone');
 
